@@ -1,5 +1,5 @@
 """
-URL configuration for naan_mudhalvan project.
+URL configuration for placement_officers project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/

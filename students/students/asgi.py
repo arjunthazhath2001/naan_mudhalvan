@@ -1,5 +1,5 @@
 """
-ASGI config for naan_mudhalvan project.
+ASGI config for students project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "naan_mudhalvan.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "students.settings")
 
 application = get_asgi_application()
