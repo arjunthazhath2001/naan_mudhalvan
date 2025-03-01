@@ -1,0 +1,96 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    command: >
+      bash -c "
+      postgres -D /var/lib/postgresql/data & 
+      psql -U myuser -c 'CREATE DATABASE placement_officers_db;' &
+      psql -U myuser -c 'CREATE DATABASE placement_team_db;' &
+      psql -U myuser -c 'CREATE DATABASE program_managers_db;' &
+      psql -U myuser -c 'CREATE DATABASE recruiters_db;' &
+      psql -U myuser -c 'CREATE DATABASE students_db;' &
+      wait
+      "
+
+  placement_officers:
+    build:
+      context: ./placement_officers
+    container_name: placement_officers
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "placement_officers.wsgi:application"]
+    volumes:
+      - ./placement_officers:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/placement_officers_db
+
+  placement_team:
+    build:
+      context: ./placement_team
+    container_name: placement_team
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "placement_team.wsgi:application"]
+    volumes:
+      - ./placement_team:/app
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/placement_team_db
+
+  program_managers:
+    build:
+      context: ./program_managers
+    container_name: program_managers
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "program_managers.wsgi:application"]
+    volumes:
+      - ./program_managers:/app
+    ports:
+      - "8003:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/program_managers_db
+
+  recruiters:
+    build:
+      context: ./recruiters
+    container_name: recruiters
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "recruiters.wsgi:application"]
+    volumes:
+      - ./recruiters:/app
+    ports:
+      - "8004:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/recruiters_db
+
+  students:
+    build:
+      context: ./students
+    container_name: students
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "students.wsgi:application"]
+    volumes:
+      - ./students:/app
+    ports:
+      - "8005:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/students_db
+
+volumes:
+  postgres_data:
