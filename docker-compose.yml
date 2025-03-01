@@ -1,16 +1,14 @@
-version: '3'
-
 services:
-  db:
-    image: postgres:13
-    container_name: postgres_container
+  db: #db(database) is our 1st service and all other services are dependent on this 
+    image: postgres:13 #uses the existing postgress image available in dockerhub/registry
+    container_name: postgres_container #any name that you want. 
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_USER: myuser #you can choose any user name
+      POSTGRES_PASSWORD: mypassword #you can choose any password
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data #mounting a volume to a place where postgres stores data. this is done so that we have a copy of previous data, even after restarting our postgres service. when we start a stop our docker service, the data that was entered into our db will get erased. to prevent that we need to mount volumes, where a copy of the data will be stored permanently 
     ports:
-      - "5432:5432"
+      - "5432:5432" #exposing the postgres service in its usual port 5432 and making it available in same port itself through port mapping
     command: >
       bash -c "
       postgres -D /var/lib/postgresql/data & 
@@ -21,10 +19,25 @@ services:
       psql -U myuser -c 'CREATE DATABASE students_db;' &
       wait
       "
+#Above I have created 5 separate databases for all of our 5 users(projects )that will run on a single postgres instance      
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: your-email@example.com
+      PGADMIN_DEFAULT_PASSWORD: yourpassword
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+#pgadmin is a GUI for postgres databases. so you can add that functinality to that project by mentioning the service above using an pgadmin docker image and making it available on port 8080(or anything like that).
 
   placement_officers:
     build:
-      context: ./placement_officers
+      context: .
+      dockerfile: placement_officers/Dockerfile
     container_name: placement_officers
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "placement_officers.wsgi:application"]
     volumes:
@@ -36,9 +49,11 @@ services:
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/placement_officers_db
 
+
   placement_team:
     build:
-      context: ./placement_team
+      context: .
+      dockerfile: placement_team/Dockerfile
     container_name: placement_team
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "placement_team.wsgi:application"]
     volumes:
@@ -50,9 +65,11 @@ services:
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/placement_team_db
 
+
   program_managers:
     build:
-      context: ./program_managers
+      context: .
+      dockerfile: program_managers/Dockerfile
     container_name: program_managers
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "program_managers.wsgi:application"]
     volumes:
@@ -64,9 +81,11 @@ services:
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/program_managers_db
 
+
   recruiters:
     build:
-      context: ./recruiters
+      context: .
+      dockerfile: recruiters/Dockerfile
     container_name: recruiters
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "recruiters.wsgi:application"]
     volumes:
@@ -78,9 +97,11 @@ services:
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/recruiters_db
 
+
   students:
     build:
-      context: ./students
+      context: .
+      dockerfile: students/Dockerfile
     container_name: students
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "students.wsgi:application"]
     volumes:
