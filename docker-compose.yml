@@ -1,38 +1,35 @@
-services:
-  db: #db(database) is our 1st service and all other services are dependent on this 
-    image: postgres:13 #uses the existing postgress image available in dockerhub/registry
-    container_name: postgres_container #any name that you want. 
-    environment:
-      POSTGRES_USER: myuser #you can choose any user name
-      POSTGRES_PASSWORD: mypassword #you can choose any password
+services:  
+  # Single PostgreSQL instance for all services
+  db:
+    image: postgres
+    restart: always
+    container_name: postgresql_shared
     volumes:
-      - postgres_data:/var/lib/postgresql/data #mounting a volume to a place where postgres stores data. this is done so that we have a copy of previous data, even after restarting our postgres service. when we start a stop our docker service, the data that was entered into our db will get erased. to prevent that we need to mount volumes, where a copy of the data will be stored permanently 
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: shared_db
     ports:
-      - "5432:5432" #exposing the postgres service in its usual port 5432 and making it available in same port itself through port mapping
-    command: >
-      bash -c "
-      postgres -D /var/lib/postgresql/data & 
-      psql -U myuser -c 'CREATE DATABASE placement_officers_db;' &
-      psql -U myuser -c 'CREATE DATABASE placement_team_db;' &
-      psql -U myuser -c 'CREATE DATABASE program_managers_db;' &
-      psql -U myuser -c 'CREATE DATABASE recruiters_db;' &
-      psql -U myuser -c 'CREATE DATABASE students_db;' &
-      wait
-      "
-#Above I have created 5 separate databases for all of our 5 users(projects )that will run on a single postgres instance      
+      - "5432:5432"
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.2
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin_container
+    container_name: pgadmin4
+    restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: your-email@example.com
-      PGADMIN_DEFAULT_PASSWORD: yourpassword
+      PGADMIN_DEFAULT_EMAIL: root@root.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    volumes:
+      - ./data/pgadmin-data:/var/lib/pgadmin
     ports:
-      - "8080:80"
-    depends_on:
-      - db
-
-#pgadmin is a GUI for postgres databases. so you can add that functinality to that project by mentioning the service above using an pgadmin docker image and making it available on port 8080(or anything like that).
+      - "5050:80"
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.3
 
   placement_officers:
     build:
@@ -46,9 +43,11 @@ services:
       - "8001:8000"
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.5
     environment:
-      - DATABASE_URL=postgres://myuser:mypassword@db:5432/placement_officers_db
-
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
   placement_team:
     build:
@@ -62,13 +61,15 @@ services:
       - "8002:8000"
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.6
     environment:
-      - DATABASE_URL=postgres://myuser:mypassword@db:5432/placement_team_db
-
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
   program_managers:
     build:
-      context: .
+      context: . 
       dockerfile: program_managers/Dockerfile
     container_name: program_managers
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "program_managers.wsgi:application"]
@@ -78,13 +79,15 @@ services:
       - "8003:8000"
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.7
     environment:
-      - DATABASE_URL=postgres://myuser:mypassword@db:5432/program_managers_db
-
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
   recruiters:
     build:
-      context: .
+      context: . 
       dockerfile: recruiters/Dockerfile
     container_name: recruiters
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "recruiters.wsgi:application"]
@@ -94,13 +97,15 @@ services:
       - "8004:8000"
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.8
     environment:
-      - DATABASE_URL=postgres://myuser:mypassword@db:5432/recruiters_db
-
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
   students:
     build:
-      context: .
+      context: . 
       dockerfile: students/Dockerfile
     container_name: students
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "students.wsgi:application"]
@@ -110,8 +115,16 @@ services:
       - "8005:8000"
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.0.9
     environment:
-      - DATABASE_URL=postgres://myuser:mypassword@db:5432/students_db
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
-volumes:
-  postgres_data:
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "192.168.0.0/24"
+          gateway: 192.168.0.1
