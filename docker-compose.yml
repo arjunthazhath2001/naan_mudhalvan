@@ -1,130 +1,160 @@
 services:  
-  # Single PostgreSQL instance for all services
+  # Define a PostgreSQL database service
   db:
+    # Use the official 'postgres' image
     image: postgres
+    # Always restart the container if it stops or crashes
     restart: always
+    # Name the container 'postgresql_shared' for easier identification
     container_name: postgresql_shared
+    # Mount a local directory './data/db' to the container's data directory
+    # to persist the PostgreSQL data (survives container restarts)
     volumes:
       - ./data/db:/var/lib/postgresql/data
+    # Set environment variables for PostgreSQL (username, password, and database name)
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: shared_db
+      POSTGRES_USER: myuser           # Username for the PostgreSQL database
+      POSTGRES_PASSWORD: mypassword   # Password for the PostgreSQL database
+      POSTGRES_DB: shared_db          # Name of the database to be created
+    # Expose PostgreSQL port 5432 to the host system
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Maps host port 5432 to container's port 5432
+    # Attach the container to a custom network and assign a static IP address
     networks:
       app_net:
-        ipv4_address: 192.168.0.2
+        ipv4_address: 192.168.0.2     # Assign a specific IP address to this container
 
+  # Define a PgAdmin service to manage PostgreSQL
   pgadmin:
+    # Use the official 'pgadmin' image for the web-based database management tool
     image: dpage/pgadmin4
+    # Name the container 'pgadmin4' for easier identification
     container_name: pgadmin4
+    # Restart this container automatically if it stops
     restart: always
+    # Set environment variables for the PgAdmin admin account
     environment:
-      PGADMIN_DEFAULT_EMAIL: root@root.com
-      PGADMIN_DEFAULT_PASSWORD: root
+      PGADMIN_DEFAULT_EMAIL: root@root.com  # Email for the default PgAdmin user
+      PGADMIN_DEFAULT_PASSWORD: root        # Password for the default PgAdmin user
+    # Mount a local directory './data/pgadmin-data' to persist PgAdmin data
     volumes:
       - ./data/pgadmin-data:/var/lib/pgadmin
+    # Expose PgAdmin port 5050 on the host system, mapping it to port 80 in the container
     ports:
-      - "5050:80"
+      - "5050:80"  # Host port 5050 maps to container's web interface port 80
+    # Attach the container to the same custom network and assign a static IP
     networks:
       app_net:
-        ipv4_address: 192.168.0.3
+        ipv4_address: 192.168.0.3     # Assign a specific IP address to this container
 
+  # Define a service for the placement officers web application
   placement_officers:
+    # Specify the build context and Dockerfile for this service
     build:
-      context: .
-      dockerfile: placement_officers/Dockerfile
+      context: .                        # Use current directory as the build context
+      dockerfile: placement_officers/Dockerfile  # Use a custom Dockerfile
+    # Name the container 'placement_officers' for easy identification
     container_name: placement_officers
+    # Define the command to start the application using 'gunicorn' as the WSGI server
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "placement_officers.wsgi:application"]
+    # Mount the local folder to the container to keep the application files in sync
     volumes:
       - ./placement_officers:/app
+    # Map host port 8001 to container port 8000 for accessing the web app
     ports:
-      - "8001:8000"
+      - "8001:8000"  # Host port 8001 maps to the app's port 8000 in the container
+    # Ensure that this service starts after the 'db' service (PostgreSQL)
     depends_on:
-      - db
+      - db            # This service depends on the 'db' service (PostgreSQL)
+    # Attach to the custom network and assign a static IP address
     networks:
       app_net:
-        ipv4_address: 192.168.0.5
+        ipv4_address: 192.168.0.5     # Assign a specific IP address to this container
+    # Set the environment variable for the database connection
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
+  # Define a service for the placement team web application
   placement_team:
     build:
-      context: .
-      dockerfile: placement_team/Dockerfile
-    container_name: placement_team
+      context: .                         # Use current directory as the build context
+      dockerfile: placement_team/Dockerfile  # Use a custom Dockerfile for this service
+    container_name: placement_team        # Name the container 'placement_team'
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "placement_team.wsgi:application"]
     volumes:
       - ./placement_team:/app
     ports:
-      - "8002:8000"
+      - "8002:8000"  # Host port 8002 maps to the container's port 8000
     depends_on:
-      - db
+      - db            # This service depends on the 'db' service (PostgreSQL)
     networks:
       app_net:
-        ipv4_address: 192.168.0.6
+        ipv4_address: 192.168.0.6     # Assign a static IP to the container
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
+  # Define a service for the program managers web application
   program_managers:
     build:
-      context: . 
-      dockerfile: program_managers/Dockerfile
-    container_name: program_managers
+      context: .                         # Build context is current directory
+      dockerfile: program_managers/Dockerfile  # Use a specific Dockerfile for this service
+    container_name: program_managers      # Name the container 'program_managers'
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "program_managers.wsgi:application"]
     volumes:
       - ./program_managers:/app
     ports:
-      - "8003:8000"
+      - "8003:8000"  # Host port 8003 maps to the container's port 8000
     depends_on:
-      - db
+      - db            # This service depends on the 'db' service (PostgreSQL)
     networks:
       app_net:
-        ipv4_address: 192.168.0.7
+        ipv4_address: 192.168.0.7     # Assign a static IP to the container
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
+  # Define a service for the recruiters web application
   recruiters:
     build:
-      context: . 
-      dockerfile: recruiters/Dockerfile
-    container_name: recruiters
+      context: .                         # Build context is current directory
+      dockerfile: recruiters/Dockerfile   # Use a specific Dockerfile for this service
+    container_name: recruiters            # Name the container 'recruiters'
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "recruiters.wsgi:application"]
     volumes:
       - ./recruiters:/app
     ports:
-      - "8004:8000"
+      - "8004:8000"  # Host port 8004 maps to the container's port 8000
     depends_on:
-      - db
+      - db            # This service depends on the 'db' service (PostgreSQL)
     networks:
       app_net:
-        ipv4_address: 192.168.0.8
+        ipv4_address: 192.168.0.8     # Assign a static IP to the container
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
+  # Define a service for the students web application
   students:
     build:
-      context: . 
-      dockerfile: students/Dockerfile
-    container_name: students
+      context: .                         # Build context is current directory
+      dockerfile: students/Dockerfile     # Use a specific Dockerfile for this service
+    container_name: students              # Name the container 'students'
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "students.wsgi:application"]
     volumes:
       - ./students:/app
     ports:
-      - "8005:8000"
+      - "8005:8000"  # Host port 8005 maps to the container's port 8000
     depends_on:
-      - db
+      - db            # This service depends on the 'db' service (PostgreSQL)
     networks:
       app_net:
-        ipv4_address: 192.168.0.9
+        ipv4_address: 192.168.0.9     # Assign a static IP to the container
     environment:
       - DATABASE_URL=postgres://myuser:mypassword@db:5432/shared_db
 
+# Define a custom network to be shared by all the services
 networks:
   app_net:
-    driver: bridge
+    driver: bridge        # Use a bridge network, which is isolated from other networks
     ipam:
       config:
-        - subnet: "192.168.0.0/24"
-          gateway: 192.168.0.1
+        - subnet: "192.168.0.0/24"      # Define the IP address range for the network
+          gateway: 192.168.0.1          # Specify the gateway for the network
