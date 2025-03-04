@@ -120,3 +120,12 @@ def index(request):
         'qr_image': qr_image,
         'district': district
     })
+
+
+def companies(request):
+    recruiters = [
+        {'email': 'hr@axis.com', 'password': 'axis098$$'},
+        {'email': 'hr@avionltd.com', 'password': 'avio03@4#'},
+        {'email': 'hr@axis.com', 'password': 'axis098$$'}
+    ]
+    return render(request, 'placement_team_app/companies.html', {'recruiters': recruiters})
