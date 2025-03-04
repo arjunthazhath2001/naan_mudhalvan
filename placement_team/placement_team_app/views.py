@@ -115,10 +115,10 @@ def generate_qr_code_image(job_fair_id):
                        box_size=10, border=4)
     # Create a new QRCode object. 'version=1' sets the size of the QR code, 'ERROR_CORRECT_L' is the error correction level, 'box_size=10' defines the size of each box, and 'border=4' sets the width of the QR code border.
     
-    registration_link = f"https://youtube.com"
+    registration_link = f"http://localhost:8005/nm/students/register/{job_fair_id}/"
     # Set a mock registration link (in practice, this would likely be a registration page for the job fair).
     
-    qr.add_data(f"Job Fair ID: {job_fair_id}, Link: {registration_link}")
+    qr.add_data(registration_link)
     # Add the job fair ID and the registration link as data in the QR code.
     
     qr.make(fit=True)
