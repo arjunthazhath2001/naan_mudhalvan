@@ -72,14 +72,18 @@
         /* QR code container */
         .qr-container {
             margin: 25px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .qr-container img {
-            max-width: 200px;
+            max-width: 250px; /* Increased width */
             height: auto;
             margin-bottom: 15px;
         }
 
+        /* New style for QR code details */
         /* Form styling */
         .form-container {
             background-color: #f5f5f5;
@@ -193,12 +197,12 @@
         {% endif %}
 
         <!-- Display the QR code if available -->
-        {% if qr_image %}
+        {% if qr_image and district %}
         <div class="qr-container">
             <img src="{{ qr_image }}" alt="QR Code">
-            <div>
-                <a href="{{ qr_image }}" download="job_fair_qr.png" class="download-btn">Download QR Code</a>
-            </div>
+        <div>
+            <a href="{{ qr_image }}" download="job_fair_qr.png" class="download-btn">Download QR Code</a>
+        </div>
         </div>
         {% endif %}
         
