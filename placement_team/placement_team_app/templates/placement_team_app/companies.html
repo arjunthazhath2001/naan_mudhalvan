@@ -65,9 +65,10 @@
 
         <div class="input-group mb-3">
             <select class="form-select">
-                <option>Theni - 29/03/2025</option>
+                {% for job_fair in job_fair_list %}
+                    <option>{{ job_fair }}</option>
+                {% endfor %}
             </select>
-            <button class="btn btn-primary">OK</button>
         </div>
 
         <div class="input-group mb-3">

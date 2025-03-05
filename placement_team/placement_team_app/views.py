@@ -122,10 +122,13 @@ def index(request):
     })
 
 
+@login_required(login_url='login')
 def companies(request):
+    job_fairs= Job_fairs.objects.all()
+    job_fair_list = [f"{job_fair.district} - {job_fair.date_of_job_fair}" for job_fair in job_fairs]
     recruiters = [
         {'email': 'hr@axis.com', 'password': 'axis098$$'},
         {'email': 'hr@avionltd.com', 'password': 'avio03@4#'},
         {'email': 'hr@axis.com', 'password': 'axis098$$'}
     ]
-    return render(request, 'placement_team_app/companies.html', {'recruiters': recruiters})
+    return render(request, 'placement_team_app/companies.html', {'job_fair_list':job_fair_list, 'recruiters': recruiters})
